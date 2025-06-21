@@ -125,7 +125,3 @@ export const createStore = ({
 
   return store;
 };
-
-// Default export with no config
-const store = createStore();
-export default store;
