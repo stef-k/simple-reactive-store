@@ -1,0 +1,22 @@
+{
+  "name": "simple-reactive-store",
+  "version": "1.0.0",
+  "description": "A lightweight reactive store for plain JavaScript apps (ESM-first)",
+  "type": "module",
+  "main": "store.js",
+  "exports": {
+    ".": {
+      "import": "./store.js"
+    }
+  },
+  "author": "Stef Kariotidis - stefk.me - stef[dot]kariotidis[at]gmail[dot]com",
+  "license": "MIT",
+  "keywords": [
+    "store",
+    "reactive",
+    "state",
+    "esm",
+    "vanilla-js",
+    "subscription"
+  ]
+}
