@@ -1,18 +1,24 @@
 # 🧠 simple-reactive-store
 
-A lightweight, framework-free reactive state manager.
-Ideal for small apps, modular tools, and browser-based UIs — no Redux, no boilerplate.
+A lightweight, framework-free reactive state manager for modern web apps.
+No Redux, no boilerplate, no frameworks — just a powerful state core with time-travel, DOM binding, and full debug panel.
 
 ---
 
 ## ✅ Features
 
-- `createStore({ initialState })` — start with any state shape
-- `dispatch(type, payload)` — trigger updates
-- `subscribe(fn)` — react to state changes
-- Auto-refreshing in-browser debug panel
-- Optional global exposure (`window.myStore`)
-- ESM-first (works in browser or Node via bundlers)
+- `createStore({ initialState })` — any shape, deep or flat
+- `dispatch(type, payload)` — immutable, event-style updates
+- `subscribe(fn)` — fine-grained state listeners
+- `watch(key, fn)` — reactive by-key subscriptions
+- `watchPath(path, fn)` — deep path watching (`foo.bar.baz`)
+- `computed(key, fn)` — define derived state values
+- `bind(key, selector)` — one-way binding to textContent
+- `autoBind()` — auto-wires `[data-model]` and `[data-bind]`
+- `link(store, key)` / `linkTwoWay()` — inter-store reactive sync
+- `syncStorage` — persist keys to localStorage/sessionStorage
+- ⏮️ `undo()` / ⏭️ `redo()` / `jumpTo(index)` — built-in history navigation
+- 🧪 Dev panel with time-travel UI and dropdown history
 
 ---
 
@@ -27,7 +33,7 @@ npm install simple-reactive-store
 
 ## 🛠️ Basic Usage
 
-Create your store instance:
+### 1. Create your store
 
 ```js
 // storeInstance.js
@@ -36,90 +42,129 @@ import { createStore } from './store.js';
 export const store = createStore({
   name: 'myApp',
   initialState: {
-    context: null,
-    user: null
+    theme: 'light',
+    user: null,
+    draft: {}
   },
-  enableDevPanel: true
+  enableDevPanel: true,
+  syncStorage: ['theme']
 });
 ```
 
-Use it anywhere:
+### 2. Use anywhere
 
 ```js
 // someFeature.js
 import { store } from './storeInstance.js';
 
-store.dispatch('set-context', {
-  type: 'region',
-  id: 'abc123',
-  meta: { name: 'Berlin' }
-});
+store.dispatch('set-user', { name: 'Alice' });
 
-store.subscribe(({ type, payload }) => {
-  console.log('Update:', type, payload);
+store.watch('user', user => {
+  console.log('New user:', user);
 });
 ```
+
+---
+
+## 🔁 Time Travel & Undo/Redo
+
+If `enableDevPanel: true`, the store will:
+
+- Track every meaningful state change
+- Expose:
+  - `store.undo()` / `store.redo()`
+  - `store.jumpTo(index)`
+- Show a timeline dropdown for direct history navigation
+- Prevents duplicate state entries
+
+---
+
+## 🔗 Linking Stores
+
+```js
+storeA.link(storeB, 'user'); // one-way
+
+storeA.linkTwoWay(storeB, 'theme'); // bidirectional
+```
+
+Supports optional transform and reverseTransform functions.
+
+---
+
+## 📦 Persistence
+
+Specify keys to sync automatically:
+
+```js
+createStore({
+  syncStorage: ['theme', 'draft'],
+  storageDriver: sessionStorage, // or localStorage
+  storageEncrypt: JSON.stringify,
+  storageDecrypt: JSON.parse
+});
+```
+
+Works with `data-model` elements or via direct dispatch.
+
+---
+
+## ⚙️ DOM Binding
+
+Supports `data-model` for input ↔ state sync, and `data-bind` for display.
+
+### Markup
+
+```html
+<input data-model="theme" />
+<span data-bind="theme"></span>
+```
+
+### Activation
+
+```js
+store.autoBind(); // once at startup
+```
+
+Supports formatting via `data-format="uppercase"`, `percent`, `iso-date`, etc.
 
 ---
 
 ## 🧪 Dev Tools
 
-If `enableDevPanel: true` is passed:
+If `enableDevPanel: true`:
 
-- Shows a floating panel on the page
-- Allows toggling, refreshing, and inspecting state
-- Registers globally:
-  - `window.myAppStore.getState()`
-  - `window.myAppState()` logs the full state
+- 🧠 Floating inspector with toggle, refresh, and state dump
+- ⏮️ Undo / ⏭️ Redo
+- 🔍 History dropdown for jumping between snapshots
+- ⌨️ Keyboard support: `Ctrl+Z` (undo), `Ctrl+Shift+Z` (redo)
+- `window.myAppStore` and `window.myAppState()` for live debugging
 
 ---
 
 ## 🌍 Global Exposure
 
-If you pass just a `name`:
+If `name: 'myApp'` is passed:
 
-```js
-createStore({ name: 'myApp' });
-```
-
-It auto-creates:
-
-- `window.myAppStore` → access the store
-- `window.myAppState()` → logs a snapshot
-
----
-
-## 💡 Dispatch Rules
-
-You can handle specific or generic actions:
-
-```js
-store.dispatch('set-user', { name: 'Alice' });
-// auto-mapped to state.user = { name: 'Alice' }
-// emits event: { type: 'user-updated', payload }
-```
-
-Or explicitly support known cases:
-
-```js
-store.dispatch('clear-context');
-// handled in switch-case as a known action
-```
+- `window.myAppStore` — full access
+- `myAppState()` — logs a state snapshot to console
 
 ---
 
 ## 📁 Suggested File Structure
 
-```
+```bash
 src/
-├── store.js              ← the generic store logic
-├── storeInstance.js      ← your app-specific store setup
-├── ...
+├── store.js              ← reusable store logic
+├── storeInstance.js      ← app-specific setup
+├── components/
+│   ├── trip.js
+│   ├── segmentHandlers.js
+│   └── ...
 ```
 
 ---
 
 ## ✅ License
 
-MIT — see the LICENSE file for details.
-No framework dependencies, zero runtime overhead.
+MIT — no dependencies, no lock-in, usable in any frontend stack.
+Perfect for progressive enhancement, micro frontends, and modern plain-JS apps.

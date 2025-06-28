@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Note App with Reactive Store</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+    <style>
+      body {
+        padding: 2rem;
+      }
+      .note-card {
+        margin-bottom: 1rem;
+      }
+      .note-card.active {
+        border-color: #0d6efd;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h1 class="mb-4">📝 Notes</h1>
+
+      <div class="mb-4">
+        <div class="mb-2">
+          <input
+            type="text"
+            class="form-control"
+            placeholder="Title"
+            data-model="currentNote.title"
+          />
+        </div>
+        <div class="mb-2">
+          <textarea
+            class="form-control"
+            rows="3"
+            placeholder="Details"
+            data-model="currentNote.details"
+          ></textarea>
+        </div>
+        <button class="btn btn-primary" id="btn-save-note">Save Note</button>
+        <button class="btn btn-secondary" id="btn-clear-note">Clear</button>
+        <button class="btn btn-outline-secondary" id="btn-undo">Undo</button>
+        <button class="btn btn-outline-secondary" id="btn-redo">Redo</button>
+      </div>
+
+      <ul class="list-group" id="notes-list"></ul>
+    </div>
+
+    <script type="module">
+      import { createStore } from "./store.js";
+
+      const store = createStore({
+        name: "notesApp",
+        enableDevPanel: true,
+        syncStorage: ["notes"],
+        initialState: {
+          notes: [],
+          currentNote: { id: null, title: "", details: "" },
+        },
+      });
+
+      store.autoBind();
+
+      const list = document.getElementById("notes-list");
+      const saveBtn = document.getElementById("btn-save-note");
+      const clearBtn = document.getElementById("btn-clear-note");
+      const undoBtn = document.getElementById("btn-undo");
+      const redoBtn = document.getElementById("btn-redo");
+
+      const renderNotes = () => {
+        const state = store.getState();
+        const notes = state.notes;
+        const currentNote = state.currentNote || { title: "", details: "" };
+        list.innerHTML = "";
+
+        notes.forEach((note) => {
+          if (!note.title && !note.details) return;
+
+          const li = document.createElement("li");
+          li.className =
+            "list-group-item d-flex justify-content-between align-items-start note-card" +
+            (note.id === currentNote.id ? " active" : "");
+          li.innerHTML = `
+            <div>
+              <strong>${note.title || "(Untitled)"}</strong><br>
+              <small>${note.details || "(No details)"}</small>
+            </div>
+            <div>
+              <button class="btn btn-sm btn-outline-primary me-1 btn-edit" data-id="${
+                note.id
+              }">Edit</button>
+              <button class="btn btn-sm btn-outline-danger btn-delete" data-id="${
+                note.id
+              }">Delete</button>
+            </div>
+          `;
+          list.appendChild(li);
+        });
+
+        list.querySelectorAll(".btn-delete").forEach((btn) => {
+          btn.onclick = () => {
+            const id = btn.dataset.id;
+            const newNotes = store.getState().notes.filter((n) => n.id !== id);
+            store.dispatch("set-notes", newNotes);
+            store.dispatch(
+              "set-currentNote",
+              { id: null, title: "", details: "" },
+              { skipHistory: true }
+            );
+          };
+        });
+
+        list.querySelectorAll(".btn-edit").forEach((btn) => {
+          btn.onclick = () => {
+            const id = btn.dataset.id;
+            const note = store.getState().notes.find((n) => n.id === id);
+            if (note) store.dispatch("set-currentNote", structuredClone(note));
+          };
+        });
+      };
+
+      store.watchAll(() => {
+        renderNotes();
+      });
+
+      saveBtn.onclick = () => {
+        const state = store.getState();
+        const { notes, currentNote } = state;
+        const id = currentNote.id || crypto.randomUUID();
+
+        const updated = {
+          ...currentNote,
+          id,
+        };
+
+        const nextNotes = notes.some((n) => n.id === id)
+          ? notes.map((n) => (n.id === id ? updated : n))
+          : [...notes, updated];
+
+        store.dispatch("set-notes", nextNotes);
+        store.dispatch("set-currentNote", { id: null, title: "", details: "" });
+      };
+
+      clearBtn.onclick = () => {
+        store.dispatch("set-currentNote", { id: null, title: "", details: "" });
+      };
+
+      undoBtn.onclick = () => store.undo();
+      redoBtn.onclick = () => store.redo();
+    </script>
+  </body>
+</html>
