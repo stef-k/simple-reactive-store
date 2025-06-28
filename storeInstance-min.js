@@ -1,0 +1,1 @@
+import{createStore}from"./store.js";export const store=createStore({name:"myproject",enableDevPanel:!0,initialState:{theme:"light",user:null,draft:{}},syncStorage:["theme"],storageDriver:localStorage,storageEncrypt:JSON.stringify,storageDecrypt:JSON.parse});

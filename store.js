@@ -540,7 +540,7 @@ export const createStore = (config = {}) => {
     `;
     panel.innerHTML = `
     <div style="display:flex;justify-content:space-between;padding:4px 6px;background:#f5f5f5">
-      <strong>🧠 Store </strong>
+      <strong style="margin-right: 15px;margin-top: 6.5px;">Store </strong>
       <select class="form-select form-select-sm ms-auto" id="wfHistoryJump" style="width: auto;">
         <option value="0">State #0</option>
       </select>
